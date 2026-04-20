@@ -1,0 +1,48 @@
+{
+    "dataRoles": [
+        {
+            "displayName": "日付",
+            "name": "date",
+            "kind": "Grouping"
+        }
+    ],
+    "objects": {
+        "general": {
+            "properties": {
+                "filter": { "type": { "filter": true } }
+            }
+        },
+        "state": {
+            "properties": {
+                "mode":      { "type": { "text": true } },
+                "startDate": { "type": { "text": true } },
+                "endDate":   { "type": { "text": true } }
+            }
+        },
+        "appearance": {
+            "properties": {
+                "fontFamily":     { "type": { "formatting": { "fontFamily": true } } },
+                "fontSize":       { "type": { "formatting": { "fontSize": true } } },
+                "accentColor":    { "type": { "fill": { "solid": { "color": true } } } },
+                "fontColor":      { "type": { "fill": { "solid": { "color": true } } } },
+                "backgroundColor":{ "type": { "fill": { "solid": { "color": true } } } }
+            }
+        }
+    },
+    "dataViewMappings": [
+        {
+            "conditions": [
+                { "date": { "max": 1 } }
+            ],
+            "table": {
+                "rows": {
+                    "for": { "in": "date" },
+                    "dataReductionAlgorithm": { "top": { "count": 30000 } }
+                }
+            }
+        }
+    ],
+    "supportsHighlight": false,
+    "supportsSynchronizingFilterState": true,
+    "privileges": []
+}
