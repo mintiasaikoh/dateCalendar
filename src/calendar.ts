@@ -101,8 +101,8 @@ export class Calendar {
         // モードタブ
         this.modeTabs = document.createElement("div");
         this.modeTabs.className = "dc-mode-tabs";
-        const singleBtn = this.makeModeBtn("single", "単一");
-        const rangeBtn  = this.makeModeBtn("range", "範囲");
+        const singleBtn = this.makeModeBtn("single", "日付");
+        const rangeBtn  = this.makeModeBtn("range", "期間");
         this.modeTabs.appendChild(singleBtn);
         this.modeTabs.appendChild(rangeBtn);
         this.container.appendChild(this.modeTabs);
