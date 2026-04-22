@@ -96,7 +96,7 @@ export class Calendar {
 
     private build(): void {
         this.container.classList.add("dc-root");
-        this.container.innerHTML = "";
+        while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
 
         // モードタブ
         this.modeTabs = document.createElement("div");
@@ -213,7 +213,7 @@ export class Calendar {
     }
 
     private fillYearOptions(): void {
-        this.yearSel.innerHTML = "";
+        while (this.yearSel.firstChild) this.yearSel.removeChild(this.yearSel.firstChild);
         for (let y = this.yearMin; y <= this.yearMax; y++) {
             const opt = document.createElement("option");
             opt.value = String(y);
@@ -244,7 +244,7 @@ export class Calendar {
         this.yearSel.value = String(this.viewYear);
         this.monthSel.value = String(this.viewMonth);
 
-        this.grid.innerHTML = "";
+        while (this.grid.firstChild) this.grid.removeChild(this.grid.firstChild);
 
         const firstDow = new Date(Date.UTC(this.viewYear, this.viewMonth, 1)).getUTCDay();
         const daysInMonth = new Date(Date.UTC(this.viewYear, this.viewMonth + 1, 0)).getUTCDate();
@@ -291,7 +291,7 @@ export class Calendar {
         }
 
         // サマリ
-        this.summary.innerHTML = "";
+        while (this.summary.firstChild) this.summary.removeChild(this.summary.firstChild);
         const label = document.createElement("span");
         label.className = "dc-summary-label";
         if (this.state.mode === "single") {
