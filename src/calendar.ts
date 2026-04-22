@@ -98,14 +98,28 @@ export class Calendar {
         this.container.classList.add("dc-root");
         while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
 
-        // モードタブ
+        // トップバー: モードタブ（左）+ 適用ボタン（右）
+        const headerBar = document.createElement("div");
+        headerBar.className = "dc-header-bar";
+        this.container.appendChild(headerBar);
+
         this.modeTabs = document.createElement("div");
         this.modeTabs.className = "dc-mode-tabs";
         const singleBtn = this.makeModeBtn("single", "日付");
         const rangeBtn  = this.makeModeBtn("range", "期間");
         this.modeTabs.appendChild(singleBtn);
         this.modeTabs.appendChild(rangeBtn);
-        this.container.appendChild(this.modeTabs);
+        headerBar.appendChild(this.modeTabs);
+
+        this.applyBtn = document.createElement("button");
+        this.applyBtn.type = "button";
+        this.applyBtn.className = "dc-apply-btn";
+        this.applyBtn.textContent = "適用";
+        this.applyBtn.onclick = () => {
+            if (!this.isStateComplete()) return;
+            this.cb.onChange(this.getState());
+        };
+        headerBar.appendChild(this.applyBtn);
 
         // ヘッダー（年・月セレクト + 月送り）
         this.header = document.createElement("div");
@@ -173,20 +187,6 @@ export class Calendar {
         this.summary = document.createElement("div");
         this.summary.className = "dc-summary";
         this.container.appendChild(this.summary);
-
-        // フッター（適用ボタン）
-        const footer = document.createElement("div");
-        footer.className = "dc-footer";
-        this.applyBtn = document.createElement("button");
-        this.applyBtn.type = "button";
-        this.applyBtn.className = "dc-apply-btn";
-        this.applyBtn.textContent = "適用";
-        this.applyBtn.onclick = () => {
-            if (!this.isStateComplete()) return;
-            this.cb.onChange(this.getState());
-        };
-        footer.appendChild(this.applyBtn);
-        this.container.appendChild(footer);
 
         this.fillYearOptions();
         this.render();

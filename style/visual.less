@@ -21,8 +21,16 @@
 }
 
 @container (max-width: 280px) {
-    .dc-cell { min-height: 24px; font-size: 11px; }
+    .dc-cell { font-size: 11px; }
     .dc-weekday { font-size: 10px; padding: 2px 0; }
+}
+@container (min-width: 520px) {
+    .dc-cell { font-size: 15px; }
+    .dc-weekday { font-size: 12px; }
+}
+@container (min-width: 720px) {
+    .dc-cell { font-size: 17px; }
+    .dc-weekday { font-size: 13px; }
 }
 
 .dc-empty-msg {
@@ -36,15 +44,21 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
     gap: 6px;
     container-type: inline-size;
+}
+
+.dc-header-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .dc-mode-tabs {
     display: flex;
     gap: 4px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .dc-mode-btn {
@@ -117,7 +131,6 @@
 
 .dc-cell {
     aspect-ratio: 1 / 1;
-    min-height: 30px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -200,19 +213,15 @@
     &:hover { background: #ededed; }
 }
 
-.dc-footer {
-    display: flex;
-    justify-content: flex-end;
-}
-
 .dc-apply-btn {
+    flex: 0 0 auto;
     font: inherit;
     font-family: inherit;
     color: #fff;
     background: var(--dc-accent);
     border: 1px solid var(--dc-accent);
     border-radius: 3px;
-    padding: 5px 18px;
+    padding: 5px 14px;
     cursor: pointer;
     font-size: 12px;
 
