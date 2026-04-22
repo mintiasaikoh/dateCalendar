@@ -49,6 +49,7 @@ export class Calendar {
     private monthSel: HTMLSelectElement;
     private grid: HTMLElement;
     private summary: HTMLElement;
+    private applyBtn: HTMLButtonElement;
 
     constructor(container: HTMLElement, cb: CalendarCallbacks) {
         this.container = container;
@@ -173,8 +174,27 @@ export class Calendar {
         this.summary.className = "dc-summary";
         this.container.appendChild(this.summary);
 
+        // フッター（適用ボタン）
+        const footer = document.createElement("div");
+        footer.className = "dc-footer";
+        this.applyBtn = document.createElement("button");
+        this.applyBtn.type = "button";
+        this.applyBtn.className = "dc-apply-btn";
+        this.applyBtn.textContent = "適用";
+        this.applyBtn.onclick = () => {
+            if (!this.isStateComplete()) return;
+            this.cb.onChange(this.getState());
+        };
+        footer.appendChild(this.applyBtn);
+        this.container.appendChild(footer);
+
         this.fillYearOptions();
         this.render();
+    }
+
+    private isStateComplete(): boolean {
+        if (this.state.mode === "single") return !!this.state.startDate;
+        return !!this.state.startDate && !!this.state.endDate && !this.rangeHalfSet;
     }
 
     private makeModeBtn(mode: CalendarMode, label: string): HTMLButtonElement {
@@ -188,7 +208,6 @@ export class Calendar {
             this.state = { mode, startDate: "", endDate: "" };
             this.rangeHalfSet = false;
             this.render();
-            this.cb.onChange(this.getState());
         };
         return b;
     }
@@ -301,13 +320,14 @@ export class Calendar {
             };
             this.summary.appendChild(clr);
         }
+
+        if (this.applyBtn) this.applyBtn.disabled = !this.isStateComplete();
     }
 
     private onDayClick(ymd: string): void {
         if (this.state.mode === "single") {
             this.state = { ...this.state, startDate: ymd, endDate: "" };
             this.render();
-            this.cb.onChange(this.getState());
             return;
         }
         // range モード
@@ -329,7 +349,6 @@ export class Calendar {
         this.state = { mode: "range", startDate: start, endDate: end };
         this.rangeHalfSet = false;
         this.render();
-        this.cb.onChange(this.getState());
     }
 }
 
