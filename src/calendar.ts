@@ -39,16 +39,12 @@ export class Calendar {
     private viewMonth: number; // 0-11
     private yearMin = 0;
     private yearMax = 0;
-    /** 範囲モードで 1 点目を選んだ状態（まだ終了日未確定） */
-    private rangeHalfSet = false;
 
     // DOM 参照
-    private modeTabs: HTMLElement;
     private header: HTMLElement;
     private yearSel: HTMLSelectElement;
     private monthSel: HTMLSelectElement;
     private grid: HTMLElement;
-    private summary: HTMLElement;
     private applyBtn: HTMLButtonElement;
 
     constructor(container: HTMLElement, cb: CalendarCallbacks) {
@@ -77,7 +73,6 @@ export class Calendar {
     public setState(next: Partial<CalendarState>): void {
         const merged: CalendarState = { ...this.state, ...next };
         this.state = merged;
-        this.rangeHalfSet = false;
         // view をアクティブな日付に寄せる
         const anchor = merged.startDate || merged.endDate;
         if (anchor) {
@@ -98,30 +93,11 @@ export class Calendar {
         this.container.classList.add("dc-root");
         while (this.container.firstChild) this.container.removeChild(this.container.firstChild);
 
-        // トップバー: モードタブ（左）+ 適用ボタン（右）
+        // トップバー: 年月セレクト（左）+ 適用ボタン（右）
         const headerBar = document.createElement("div");
         headerBar.className = "dc-header-bar";
         this.container.appendChild(headerBar);
 
-        this.modeTabs = document.createElement("div");
-        this.modeTabs.className = "dc-mode-tabs";
-        const singleBtn = this.makeModeBtn("single", "日付");
-        const rangeBtn  = this.makeModeBtn("range", "期間");
-        this.modeTabs.appendChild(singleBtn);
-        this.modeTabs.appendChild(rangeBtn);
-        headerBar.appendChild(this.modeTabs);
-
-        this.applyBtn = document.createElement("button");
-        this.applyBtn.type = "button";
-        this.applyBtn.className = "dc-apply-btn";
-        this.applyBtn.textContent = "適用";
-        this.applyBtn.onclick = () => {
-            if (!this.isStateComplete()) return;
-            this.cb.onChange(this.getState());
-        };
-        headerBar.appendChild(this.applyBtn);
-
-        // ヘッダー（年・月セレクト + 月送り）
         this.header = document.createElement("div");
         this.header.className = "dc-header";
 
@@ -147,25 +123,19 @@ export class Calendar {
             this.render();
         };
 
-        const prevBtn = document.createElement("button");
-        prevBtn.type = "button";
-        prevBtn.className = "dc-nav";
-        prevBtn.setAttribute("aria-label", "前月");
-        prevBtn.textContent = "◀";
-        prevBtn.onclick = () => this.shiftMonth(-1);
-
-        const nextBtn = document.createElement("button");
-        nextBtn.type = "button";
-        nextBtn.className = "dc-nav";
-        nextBtn.setAttribute("aria-label", "翌月");
-        nextBtn.textContent = "▶";
-        nextBtn.onclick = () => this.shiftMonth(1);
-
         this.header.appendChild(this.yearSel);
         this.header.appendChild(this.monthSel);
-        this.header.appendChild(prevBtn);
-        this.header.appendChild(nextBtn);
-        this.container.appendChild(this.header);
+        headerBar.appendChild(this.header);
+
+        this.applyBtn = document.createElement("button");
+        this.applyBtn.type = "button";
+        this.applyBtn.className = "dc-apply-btn";
+        this.applyBtn.textContent = "適用";
+        this.applyBtn.onclick = () => {
+            if (!this.isStateComplete()) return;
+            this.cb.onChange(this.getState());
+        };
+        headerBar.appendChild(this.applyBtn);
 
         // 曜日行
         const wk = document.createElement("div");
@@ -183,33 +153,12 @@ export class Calendar {
         this.grid.className = "dc-grid";
         this.container.appendChild(this.grid);
 
-        // サマリ
-        this.summary = document.createElement("div");
-        this.summary.className = "dc-summary";
-        this.container.appendChild(this.summary);
-
         this.fillYearOptions();
         this.render();
     }
 
     private isStateComplete(): boolean {
-        if (this.state.mode === "single") return !!this.state.startDate;
-        return !!this.state.startDate && !!this.state.endDate && !this.rangeHalfSet;
-    }
-
-    private makeModeBtn(mode: CalendarMode, label: string): HTMLButtonElement {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "dc-mode-btn";
-        b.dataset.mode = mode;
-        b.textContent = label;
-        b.onclick = () => {
-            if (this.state.mode === mode) return;
-            this.state = { mode, startDate: "", endDate: "" };
-            this.rangeHalfSet = false;
-            this.render();
-        };
-        return b;
+        return !!this.state.startDate;
     }
 
     private fillYearOptions(): void {
@@ -223,24 +172,7 @@ export class Calendar {
         this.yearSel.value = String(this.viewYear);
     }
 
-    private shiftMonth(delta: number): void {
-        let y = this.viewYear;
-        let m = this.viewMonth + delta;
-        while (m < 0)  { m += 12; y -= 1; }
-        while (m > 11) { m -= 12; y += 1; }
-        if (y < this.yearMin) this.setYearRange(y, this.yearMax);
-        if (y > this.yearMax) this.setYearRange(this.yearMin, y);
-        this.viewYear = y;
-        this.viewMonth = m;
-        this.render();
-    }
-
     private render(): void {
-        // モードタブ active
-        this.modeTabs.querySelectorAll<HTMLButtonElement>(".dc-mode-btn").forEach(b => {
-            b.classList.toggle("active", b.dataset.mode === this.state.mode);
-        });
-
         this.yearSel.value = String(this.viewYear);
         this.monthSel.value = String(this.viewMonth);
 
@@ -273,81 +205,62 @@ export class Calendar {
 
             if (ymd === todayStr) btn.classList.add("dc-today");
 
-            if (this.state.mode === "single") {
+            // 単日 or 範囲の表示
+            if (this.state.startDate && !this.state.endDate) {
                 if (ymd === this.state.startDate) btn.classList.add("dc-selected");
-            } else {
-                // range
-                if (Number.isFinite(startEp) && Number.isFinite(endEp)) {
-                    if (ep === startEp)     btn.classList.add("dc-range-start");
-                    else if (ep === endEp)  btn.classList.add("dc-range-end");
-                    else if (ep > startEp && ep < endEp) btn.classList.add("dc-range-mid");
-                } else if (Number.isFinite(startEp) && ep === startEp) {
-                    btn.classList.add("dc-range-start");
-                }
+            } else if (Number.isFinite(startEp) && Number.isFinite(endEp)) {
+                if (ep === startEp)     btn.classList.add("dc-range-start");
+                else if (ep === endEp)  btn.classList.add("dc-range-end");
+                else if (ep > startEp && ep < endEp) btn.classList.add("dc-range-mid");
             }
 
             btn.onclick = () => this.onDayClick(ymd);
             this.grid.appendChild(btn);
         }
 
-        // サマリ
-        while (this.summary.firstChild) this.summary.removeChild(this.summary.firstChild);
-        const label = document.createElement("span");
-        label.className = "dc-summary-label";
-        if (this.state.mode === "single") {
-            label.textContent = this.state.startDate || "未選択";
-        } else {
-            if (this.state.startDate && this.state.endDate) {
-                label.textContent = `${this.state.startDate} 〜 ${this.state.endDate}`;
-            } else if (this.state.startDate) {
-                label.textContent = `${this.state.startDate} 〜 （終了日を選択）`;
-            } else {
-                label.textContent = "未選択";
-            }
-        }
-        this.summary.appendChild(label);
-
-        if (this.state.startDate || this.state.endDate) {
-            const clr = document.createElement("button");
-            clr.type = "button";
-            clr.className = "dc-clear";
-            clr.textContent = "クリア";
-            clr.onclick = () => {
-                this.state = { mode: this.state.mode, startDate: "", endDate: "" };
-                this.rangeHalfSet = false;
-                this.render();
-                this.cb.onClear();
-            };
-            this.summary.appendChild(clr);
-        }
-
         if (this.applyBtn) this.applyBtn.disabled = !this.isStateComplete();
     }
 
+    /**
+     * 新仕様:
+     *   - 選択なし → クリックで単日選択
+     *   - 単日選択中 → 同じ日クリックでクリア、別日クリックで範囲確定
+     *   - 範囲選択中 → 同じ start/end クリックでクリア、別日クリックで単日選択からやり直し
+     */
     private onDayClick(ymd: string): void {
-        if (this.state.mode === "single") {
-            this.state = { ...this.state, startDate: ymd, endDate: "" };
+        const { startDate, endDate } = this.state;
+
+        // クリック日が現状の選択点にヒット → クリア
+        if (ymd === startDate || (endDate && ymd === endDate)) {
+            this.state = { mode: "single", startDate: "", endDate: "" };
+            this.render();
+            this.cb.onClear();
+            return;
+        }
+
+        if (!startDate) {
+            // 選択なし → 単日
+            this.state = { mode: "single", startDate: ymd, endDate: "" };
             this.render();
             return;
         }
-        // range モード
-        if (!this.rangeHalfSet) {
-            // 1 点目
-            this.state = { ...this.state, startDate: ymd, endDate: "" };
-            this.rangeHalfSet = true;
+
+        if (!endDate) {
+            // 単日選択中 → 範囲確定
+            let s = startDate;
+            let e = ymd;
+            const sEp = toDateEpochFromString(s);
+            const eEp = toDateEpochFromString(e);
+            if (Number.isFinite(sEp) && Number.isFinite(eEp) && sEp > eEp) {
+                [s, e] = [e, s];
+            }
+            this.state = { mode: "range", startDate: s, endDate: e };
             this.render();
-            return; // まだ発火しない
+            return;
         }
-        // 2 点目
-        let start = this.state.startDate;
-        let end = ymd;
-        const sEp = toDateEpochFromString(start);
-        const eEp = toDateEpochFromString(end);
-        if (Number.isFinite(sEp) && Number.isFinite(eEp) && sEp > eEp) {
-            [start, end] = [end, start];
-        }
-        this.state = { mode: "range", startDate: start, endDate: end };
-        this.rangeHalfSet = false;
+
+        // 範囲選択済み → 新しい単日選択からやり直し
+        this.state = { mode: "single", startDate: ymd, endDate: "" };
         this.render();
     }
 }
