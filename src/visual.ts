@@ -93,12 +93,12 @@ export class Visual implements IVisual {
         const { min, max } = this.computeYearRange(dv);
         this.calendar.setYearRange(min - 2, max + 2);
 
-        // 永続化された状態を復元（初回用）
-        const restored = this.restoreFromPersisted(dv);
-        // 外部 jsonFilters があれば優先復元（スライサー同期）
-        const restoredFromFilter = this.restoreFromJsonFilters(options.jsonFilters);
-        // どちらでも復元できなければ UI 既定（初回の空状態）のまま
-        void restored; void restoredFromFilter;
+        // UI 状態は jsonFilters を唯一の真実源とする。
+        // metadata.objects.state は書くが読まない: Power BI の「全フィルターリセット」
+        // ブックマークは filter 層のみクリアして metadata は残すため、metadata 読み込みは
+        // stale state の温床になる。cross-session 復元は Power BI が PBIX に保存した
+        // jsonFilters が担うので metadata 不要。
+        this.restoreFromJsonFilters(options.jsonFilters);
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
