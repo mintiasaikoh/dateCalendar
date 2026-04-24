@@ -203,23 +203,32 @@ export class Visual implements IVisual {
     // ==========================================================
 
     private restoreFromJsonFilters(jsonFilters: powerbi.IFilter[] | undefined): boolean {
-        if (!jsonFilters || jsonFilters.length === 0) return false;
         if (!this.dateTarget) return false;
 
         // AdvancedFilter のみ対象
         const advanced: IAdvancedFilter[] = [];
-        for (const f of jsonFilters) {
-            const ft = (f as unknown as { filterType?: FilterType })?.filterType;
-            if (ft === FilterType.Advanced) advanced.push(f as unknown as IAdvancedFilter);
+        if (jsonFilters && jsonFilters.length > 0) {
+            for (const f of jsonFilters) {
+                const ft = (f as unknown as { filterType?: FilterType })?.filterType;
+                if (ft === FilterType.Advanced) advanced.push(f as unknown as IAdvancedFilter);
+            }
         }
-        if (advanced.length === 0) return false;
 
         // 自分の列に一致するフィルターを探す
         const mine = advanced.find(f => {
             const t = f.target as IFilterColumnTarget;
             return t?.table === this.dateTarget.table && t?.column === this.dateTarget.column;
         });
-        if (!mine) return false;
+
+        // ブックマーク / 外部スライサーで自分の filter が解除された場合は UI をリセット
+        if (!mine) {
+            if (this.lastFilterSig !== "") {
+                this.lastFilterSig = "";
+                const currentMode = this.calendar.getState().mode;
+                this.calendar.setState({ mode: currentMode, startDate: "", endDate: "" });
+            }
+            return false;
+        }
 
         const conds = mine.conditions || [];
         // 期待する形: GreaterThanOrEqual <start>, LessThan <next>
